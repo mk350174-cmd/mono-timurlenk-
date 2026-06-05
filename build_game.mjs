@@ -21,7 +21,7 @@ const ZIP = join(ROOT, 'chess_assets_256_bundle (1).zip');
 // Motor harfi (apex_timur.cpp PieceType) -> manifest slug
 const LETTER_SLUG = {
   K: 'sah', R: 'kale', Z: 'zurafa', T: 'talia_gozcu', N: 'at',
-  C: 'deve', E: 'fil', W: 'kurt', F: 'vezir', V: 'general', P: 'piyon',
+  C: 'deve', E: 'fil', W: 'kurt', F: 'vezir', V: 'piyon', P: 'general',
 };
 
 // 1) manifest.json -> PIECE_IMG
@@ -46,6 +46,17 @@ const css = readFileSync(join(ROOT, 'game_src', 'game.css'), 'utf8');
 const board = readFileSync(join(ROOT, 'game_src', 'board.mjs'), 'utf8').replace(/\bexport\s+/g, '');
 const ui = readFileSync(join(ROOT, 'game_src', 'ui.js'), 'utf8');
 
+// HTML'i oku (tahta doku çıkarımı + enjeksiyon için)
+let html = readFileSync(HTML, 'utf8');
+
+// Tahta doku görsellerini .tt seçici kutularından çıkar (ilki aktif tema)
+const texMatches = [...html.matchAll(/class="tt[^"]*"\s+onclick="selT\(this\)"><img\s+src="(data:[^"]+)"/g)];
+const boardTextures = texMatches.map(m => m[1]);
+if (!boardTextures.length) console.warn('Uyarı: tahta doku görselleri bulunamadı — --g-board-tex ayarlanmadı');
+const boardTexCss = boardTextures.length
+  ? `:root{--g-board-tex:url("${boardTextures[0]}")}\n`
+  : '';
+
 // 3) enjekte edilecek bloklar
 const gameDom = `<div id="game">
   <div class="g-top">
@@ -59,7 +70,7 @@ const gameDom = `<div id="game">
 // CSS, mevcut <style> öğesinin İÇİNE ham olarak girer (yeni <style> açmaz → iç içe
 // geçme yok). İşaretçiler CSS yorumu biçiminde.
 const styleBlock =
-  `\n/*TC_GAME_CSS_START*/\n${css}\n/*TC_GAME_CSS_END*/\n`;
+  `\n/*TC_GAME_CSS_START*/\n${boardTexCss}${css}\n/*TC_GAME_CSS_END*/\n`;
 
 const scriptBlock =
   `\n<!--TC_GAME_START-->\n${gameDom}\n<script>\n(function(){\n` +
@@ -70,8 +81,6 @@ const scriptBlock =
 if (/<\/script>/i.test(PIECE_IMG.K.w + board + ui)) {
   throw new Error('Beklenmedik </script> içeriği — enjeksiyon güvenli değil');
 }
-
-let html = readFileSync(HTML, 'utf8');
 
 // önceki enjeksiyonları temizle (idempotent)
 html = html.replace(/\n?\/\*TC_GAME_CSS_START\*\/[\s\S]*?\/\*TC_GAME_CSS_END\*\/\n?/g, '');

@@ -41,7 +41,9 @@
   grid-template-rows: repeat(10, var(--cell)) 1.4em;
   position:relative;
   padding:8px; border:2px solid var(--gold-dark); border-radius:6px;
-  background:var(--dark2);
+  background-color:var(--dark2);
+  background-image:var(--g-board-tex,none);
+  background-size:100% 100%;
   box-shadow:0 0 0 1px rgba(201,168,76,.3) inset, 0 10px 34px rgba(0,0,0,.6);
 }
 
@@ -49,8 +51,8 @@
   position:relative;
   display:flex; align-items:center; justify-content:center;
 }
-.g-cell.light{ background:#e8d5a0; }
-.g-cell.dark { background:#7a5526; }
+.g-cell.light{ background:rgba(232,213,160,.42); }
+.g-cell.dark { background:rgba(122,85,38,.52); }
 .g-cell.sel{ box-shadow:0 0 0 3px var(--gold) inset; }
 
 .g-citadel{

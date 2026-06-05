@@ -4,7 +4,7 @@ import { setupBoard, mk, FILES, RANKS } from './game_src/board.mjs';
 import { writeFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
-const LETTER_SLUG = { K:'sah', R:'kale', Z:'zurafa', T:'talia_gozcu', N:'at', C:'deve', E:'fil', W:'kurt', F:'vezir', V:'general', P:'piyon' };
+const LETTER_SLUG = { K:'sah', R:'kale', Z:'zurafa', T:'talia_gozcu', N:'at', C:'deve', E:'fil', W:'kurt', F:'vezir', V:'piyon', P:'general' };
 const manifest = JSON.parse(execSync('unzip -p "chess_assets_256_bundle (1).zip" manifest.json', { maxBuffer: 1 << 28 }).toString());
 const bySlug = {}; for (const c in manifest.pieces) bySlug[manifest.pieces[c].slug] = manifest.pieces[c];
 const IMG = {}; for (const L in LETTER_SLUG) IMG[L] = { w: bySlug[LETTER_SLUG[L]].white.dataUrl, b: bySlug[LETTER_SLUG[L]].black.dataUrl };

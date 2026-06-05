@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 // PIECE_IMG'i build ile aynı şekilde kur
-const LETTER_SLUG = { K:'sah', R:'kale', Z:'zurafa', T:'talia_gozcu', N:'at', C:'deve', E:'fil', W:'kurt', F:'vezir', V:'general', P:'piyon' };
+const LETTER_SLUG = { K:'sah', R:'kale', Z:'zurafa', T:'talia_gozcu', N:'at', C:'deve', E:'fil', W:'kurt', F:'vezir', V:'piyon', P:'general' };
 const manifest = JSON.parse(execSync('unzip -p "chess_assets_256_bundle (1).zip" manifest.json', { maxBuffer: 1 << 28 }).toString());
 const bySlug = {}; for (const c in manifest.pieces) bySlug[manifest.pieces[c].slug] = manifest.pieces[c];
 const PIECE_IMG = {}; for (const L in LETTER_SLUG) PIECE_IMG[L] = { w: bySlug[LETTER_SLUG[L]].white.dataUrl, b: bySlug[LETTER_SLUG[L]].black.dataUrl };
@@ -75,7 +75,7 @@ const bk = bySq[93];
 assert.strictEqual(bk.style.gridColumn, '8'); assert.strictEqual(bk.style.gridRow, '2');
 assert.strictEqual(bk.querySelector('img.pc').getAttribute('src'), PIECE_IMG.K.b, 'siyah şah görseli sah/siyah olmalı');
 
-// Önerilen eşleme doğrulaması: Vali->general, Savaş->kurt, Ferz->vezir
+// Önerilen eşleme doğrulaması: Vali->piyon, Savaş->kurt, Ferz->vezir
 // Beyaz Vali mk(6,1)=17, Beyaz Ferz mk(4,1)=15, Beyaz Savaş mk(4,0)=4
 assert.strictEqual(bySq[17].querySelector('img.pc').getAttribute('src'), PIECE_IMG.V.w, 'Vali görseli');
 assert.strictEqual(bySq[15].querySelector('img.pc').getAttribute('src'), PIECE_IMG.F.w, 'Ferz görseli');
@@ -93,4 +93,4 @@ assert.strictEqual(bySq[5 * 11 + 5].querySelector('img.pc'), null, 'orta kare bo
 // window API'leri bağlı mı
 for (const fn of ['startGame', 'exitGame', 'newGame']) assert.strictEqual(typeof window[fn], 'function', `window.${fn}`);
 
-console.log('OK — render doğru: 112 kare, 21 etiket, 56 taş doğru konum+görselle; citadeller boş; eşleme V→general, W→kurt, F→vezir.');
+console.log('OK — render doğru: 112 kare, 21 etiket, 56 taş doğru konum+görselle; citadeller boş; eşleme V→piyon(slug), P→general(slug), W→kurt, F→vezir.');
