@@ -42,9 +42,17 @@ for (const L in LETTER_SLUG) {
 }
 
 // 2) kaynaklar
-const css = readFileSync(join(ROOT, 'game_src', 'game.css'), 'utf8');
-const board = readFileSync(join(ROOT, 'game_src', 'board.mjs'), 'utf8').replace(/\bexport\s+/g, '');
-const ui = readFileSync(join(ROOT, 'game_src', 'ui.js'), 'utf8');
+// ES modül sözdizimini tek kapsamda çalışacak şekilde temizle:
+//   - "import { … } from '…';" satırlarını sil (her şey aynı script kapsamında)
+//   - "export " anahtarını sil
+const stripModule = (src) => src
+  .replace(/^\s*import\s+[\s\S]*?from\s*['"][^'"]+['"];?\s*$/gm, '')
+  .replace(/\bexport\s+/g, '');
+const css    = readFileSync(join(ROOT, 'game_src', 'game.css'), 'utf8');
+const board  = stripModule(readFileSync(join(ROOT, 'game_src', 'board.mjs'), 'utf8'));
+const engine = stripModule(readFileSync(join(ROOT, 'game_src', 'engine.mjs'), 'utf8'));
+const ai     = stripModule(readFileSync(join(ROOT, 'game_src', 'ai.mjs'), 'utf8'));
+const ui     = readFileSync(join(ROOT, 'game_src', 'ui.js'), 'utf8');
 
 // HTML'i oku (tahta doku çıkarımı + enjeksiyon için)
 let html = readFileSync(HTML, 'utf8');
@@ -64,7 +72,26 @@ const gameDom = `<div id="game">
     <div class="g-title">Timurlenk Satrancı</div>
     <button class="g-new" onclick="newGame()">Yeni Oyun</button>
   </div>
+  <div class="g-bar">
+    <div class="g-status" id="gStatus">—</div>
+    <div class="g-actions">
+      <label class="g-side">Renk
+        <select id="gSide" onchange="setSide(this.value)">
+          <option value="w">Beyaz</option>
+          <option value="b">Siyah</option>
+        </select>
+      </label>
+      <button class="g-swap" id="gSwap" onclick="toggleSwap()">Yer Değiştir</button>
+    </div>
+  </div>
   <div class="g-stage"><div class="g-board" id="gBoard"></div></div>
+  <div class="g-over" id="gOver"><div class="g-over-card">
+    <div id="gOverMsg"></div><button onclick="newGame()">Yeni Oyun</button>
+  </div></div>
+  <div class="g-promo" id="gPromo"><div class="g-promo-card">
+    <div class="g-promo-t">Piyon terfisi — taş seç</div>
+    <div class="g-promo-row" id="gPromoRow"></div>
+  </div></div>
 </div>`;
 
 // CSS, mevcut <style> öğesinin İÇİNE ham olarak girer (yeni <style> açmaz → iç içe
@@ -75,10 +102,10 @@ const styleBlock =
 const scriptBlock =
   `\n<!--TC_GAME_START-->\n${gameDom}\n<script>\n(function(){\n` +
   `const PIECE_IMG=${JSON.stringify(PIECE_IMG)};\n` +
-  `${board}\n${ui}\n})();\n</script>\n<!--TC_GAME_END-->\n`;
+  `${board}\n${engine}\n${ai}\n${ui}\n})();\n</script>\n<!--TC_GAME_END-->\n`;
 
 // güvenlik: gömülecek içerikte script tag'ini erken kapatacak bir şey olmamalı
-if (/<\/script>/i.test(PIECE_IMG.K.w + board + ui)) {
+if (/<\/script>/i.test(PIECE_IMG.K.w + board + engine + ai + ui)) {
   throw new Error('Beklenmedik </script> içeriği — enjeksiyon güvenli değil');
 }
 

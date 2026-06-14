@@ -172,7 +172,17 @@ html,body{width:100%;height:100%;background:var(--dark);font-family:'Cinzel',ser
 }
 .g-cell.light{ background:rgba(232,213,160,.42); }
 .g-cell.dark { background:rgba(122,85,38,.52); }
+.g-cell.last{ background:rgba(201,168,76,.30); }
 .g-cell.sel{ box-shadow:0 0 0 3px var(--gold) inset; }
+/* Yasal hamle hedefleri */
+.g-cell.tgt::before{
+  content:""; position:absolute; width:32%; height:32%; border-radius:50%;
+  background:rgba(201,168,76,.80); box-shadow:0 0 7px rgba(201,168,76,.6);
+  pointer-events:none; z-index:2;
+}
+.g-cell.cap{ box-shadow:0 0 0 3px rgba(201,168,76,.9) inset; }
+.g-cell.chk{ box-shadow:0 0 0 3px #e06a4a inset, 0 0 14px rgba(224,106,74,.75) inset; }
+.g-cell.swapcand{ outline:2px dashed rgba(201,168,76,.85); outline-offset:-3px; cursor:pointer; }
 
 .g-citadel{
   background:repeating-linear-gradient(45deg,#34250f,#34250f 6px,#46330f 6px,#46330f 12px);
@@ -201,6 +211,68 @@ html,body{width:100%;height:100%;background:var(--dark);font-family:'Cinzel',ser
   width:48px; height:48px;
   filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));
 }
+
+/* ── Durum çubuğu + kontroller ── */
+.g-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 12px; border-bottom:1px solid rgba(201,168,76,.25);
+  background:rgba(0,0,0,.22); flex-wrap:wrap;
+}
+.g-status{
+  font-family:'Cinzel',serif; color:var(--gold-light);
+  font-size:clamp(11px,3vw,15px); min-height:1.2em;
+}
+.g-actions{ display:flex; align-items:center; gap:8px; }
+.g-side{ color:var(--text); font-size:clamp(10px,2.6vw,13px); display:flex; align-items:center; gap:4px; }
+.g-side select{
+  background:var(--dark2); color:var(--text); border:1px solid var(--gold-dark);
+  border-radius:6px; padding:3px 6px; font-size:clamp(10px,2.6vw,13px);
+}
+.g-swap{
+  font-family:'Cinzel',serif; cursor:pointer;
+  background:linear-gradient(135deg,#3a2c12,#26200f); color:var(--gold-light);
+  border:1px solid var(--gold-dark); border-radius:8px;
+  padding:5px 10px; font-size:clamp(10px,2.6vw,13px); white-space:nowrap;
+}
+.g-swap.armed{ background:linear-gradient(135deg,#f0d080,#c9a84c); color:#2a1c0a; }
+.g-swap:disabled{ opacity:.4; cursor:default; }
+
+/* ── Tam ekran kaplama: terfi seçimi + oyun sonu ── */
+.g-over,.g-promo{
+  position:absolute; inset:0; z-index:60;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(6,4,2,.66); backdrop-filter:blur(2px);
+}
+.g-over.vis,.g-promo.vis{ display:flex; }
+.g-over-card,.g-promo-card{
+  background:linear-gradient(160deg,var(--dark3,#1a1208),#0d0905);
+  border:1px solid var(--gold-dark); border-radius:14px;
+  box-shadow:0 0 0 1px rgba(201,168,76,.3) inset, 0 14px 40px rgba(0,0,0,.7);
+  padding:22px 26px; text-align:center; max-width:90vw;
+}
+.g-over-card #gOverMsg{
+  font-family:'Cinzel Decorative',serif; color:var(--gold-light);
+  font-size:clamp(16px,4.4vw,24px); margin-bottom:16px;
+}
+.g-over-card button{
+  font-family:'Cinzel',serif; font-weight:600; cursor:pointer;
+  background:linear-gradient(135deg,#f0d080,#c9a84c); color:#2a1c0a;
+  border:1px solid var(--gold-dark); border-radius:8px; padding:8px 18px;
+  font-size:clamp(12px,3vw,15px);
+}
+.g-promo-t{
+  font-family:'Cinzel',serif; color:var(--gold-light);
+  font-size:clamp(13px,3.4vw,18px); margin-bottom:12px;
+}
+.g-promo-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.g-promo-item{
+  width:clamp(48px,15vw,72px); height:clamp(48px,15vw,72px);
+  background:rgba(201,168,76,.10); border:1px solid var(--gold-dark);
+  border-radius:10px; cursor:pointer; padding:4px;
+  display:flex; align-items:center; justify-content:center;
+}
+.g-promo-item:hover{ background:rgba(201,168,76,.25); }
+.g-promo-item img{ width:100%; height:100%; object-fit:contain; }
 
 /*TC_GAME_CSS_END*/
 </style>
@@ -378,7 +450,26 @@ function selT(el){document.querySelectorAll('.tt').forEach(t=>t.classList.remove
     <div class="g-title">Timurlenk Satrancı</div>
     <button class="g-new" onclick="newGame()">Yeni Oyun</button>
   </div>
+  <div class="g-bar">
+    <div class="g-status" id="gStatus">—</div>
+    <div class="g-actions">
+      <label class="g-side">Renk
+        <select id="gSide" onchange="setSide(this.value)">
+          <option value="w">Beyaz</option>
+          <option value="b">Siyah</option>
+        </select>
+      </label>
+      <button class="g-swap" id="gSwap" onclick="toggleSwap()">Yer Değiştir</button>
+    </div>
+  </div>
   <div class="g-stage"><div class="g-board" id="gBoard"></div></div>
+  <div class="g-over" id="gOver"><div class="g-over-card">
+    <div id="gOverMsg"></div><button onclick="newGame()">Yeni Oyun</button>
+  </div></div>
+  <div class="g-promo" id="gPromo"><div class="g-promo-card">
+    <div class="g-promo-t">Piyon terfisi — taş seç</div>
+    <div class="g-promo-row" id="gPromoRow"></div>
+  </div></div>
 </div>
 <script>
 (function(){
@@ -442,27 +533,466 @@ function serialize(b) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  Timurlenk Satrancı — UI katmanı (render + serbest sürükleme)
-//  NOT: Bu sürümde hamle kuralı / sıra / şah-mat denetimi YOKTUR. Taşlar serbestçe
-//  taşınır; dolu kareye bırakınca üstündeki yenir (değiştirilir). Hareket kuralları,
-//  yasal hamle ve AI sonraki faza bırakıldı (model DOM'dan ayrık tutuldu).
-//  Bağımlılıklar (aynı script kapsamında): PIECE_IMG, FILES, RANKS, mk,
-//  WHITE_CITADEL, BLACK_CITADEL, setupBoard, serialize.
+//  Timurlenk Satrancı — kural motoru (saf mantık, DOM'dan bağımsız)
+//  apex_timur.cpp'nin birebir JS karşılığı:
+//    • Hamle üretimi  (movegen.cpp: gen_* / slide / jump / zurafa_ray)
+//    • Saldırı tespiti (board.cpp: is_attacked / attacked_by_*)
+//    • Yasallık süzme (generate_legal: hamleden sonra şah tehdit altında olmamalı)
+//  Taş gösterimi: kare = null | {t:'K'|'R'|…, c:'w'|'b'} (board.mjs ile aynı)
+//  Hamle: { from, to, type:'normal'|'promo'|'swap'|'citadel', promo:harf|null }
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Citadel komşuları (apex_timur.cpp:77–78)
+const WHITE_CITADEL_NEIGHBOR = 1 * FILES + 10; // k2 = 21
+const BLACK_CITADEL_NEIGHBOR = 8 * FILES + 0;  // a9 = 88
+
+// Materyal değerleri — centipawn (apex_timur.cpp:150)
+const PIECE_VALUE = {
+  K: 20000, R: 550, Z: 480, T: 340, N: 325, C: 330,
+  E: 290, W: 260, F: 160, V: 130, P: 100,
+};
+
+// Piyon terfi seçenekleri (Şah ve Piyon hariç 9 taş — apex_timur.cpp:3766)
+const PROMO_OPTIONS = ['R', 'Z', 'T', 'N', 'C', 'E', 'W', 'F', 'V'];
+
+const inB = (f, r) => f >= 0 && f < FILES && r >= 0 && r < RANKS;
+const other = (c) => (c === 'w' ? 'b' : 'w');
+
+// ── Pozisyon ──────────────────────────────────────────────────────────────────
+function makePosition() {
+  return { board: setupBoard(), stm: 'w', swapUsed: { w: false, b: false }, drawn: false };
+}
+function clonePosition(pos) {
+  return {
+    board: pos.board.slice(),
+    stm: pos.stm,
+    swapUsed: { w: pos.swapUsed.w, b: pos.swapUsed.b },
+    drawn: pos.drawn,
+  };
+}
+function findKing(board, color) {
+  for (let s = 0; s < board.length; s++) {
+    const p = board[s];
+    if (p && p.t === 'K' && p.c === color) return s;
+  }
+  return -1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Saldırı tespiti — apex_timur.cpp Board::is_attacked / attacked_by_*
+//  "by" rengindeki bir taş sq karesini tehdit ediyor mu?
+// ─────────────────────────────────────────────────────────────────────────────
+function isType(board, f, r, by, t) {
+  if (!inB(f, r)) return false;
+  const p = board[mk(f, r)];
+  return !!p && p.c === by && p.t === t;
+}
+
+// Zürafa saldırısı: çapraz 1 (boş) + düz min 3 (ara kareler boş) — generate ile tutarlı
+function zurafaAttacks(board, zsq, tf0, tr0) {
+  const zf = fileOf(zsq), zr = rankOf(zsq);
+  const cdx = [1, 1, -1, -1], cdy = [1, -1, 1, -1];
+  const sdx = [1, -1, 0, 0],  sdy = [0, 0, 1, -1];
+  for (let cd = 0; cd < 4; cd++) {
+    const mf = zf + cdx[cd], mr = zr + cdy[cd];
+    if (!inB(mf, mr) || board[mk(mf, mr)] != null) continue; // çapraz kare dolu/dışı
+    for (let sd = 0; sd < 4; sd++) {
+      for (let step = 1; ; step++) {
+        const tf = mf + sdx[sd] * step, tr = mr + sdy[sd] * step;
+        if (!inB(tf, tr)) break;
+        const occ = board[mk(tf, tr)] != null;
+        if (step < 3) { if (occ) break; continue; }
+        if (tf === tf0 && tr === tr0) return true; // adım ≥3: hedefe ulaştı
+        if (occ) break;
+      }
+    }
+  }
+  return false;
+}
+
+function isAttacked(board, sq, by) {
+  if (sq >= NORMAL) return false; // Citadel'e saldırı yok (apex:3082)
+  const f = fileOf(sq), r = rankOf(sq);
+
+  // Şah (8 yön 1 kare)
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dy = -1; dy <= 1; dy++)
+      if ((dx || dy) && isType(board, f + dx, r + dy, by, 'K')) return true;
+
+  // Kale (yatay/dikey kayma)
+  {
+    const dx = [1, -1, 0, 0], dy = [0, 0, 1, -1];
+    for (let d = 0; d < 4; d++) {
+      let nf = f + dx[d], nr = r + dy[d];
+      while (inB(nf, nr)) {
+        const p = board[mk(nf, nr)];
+        if (p) { if (p.c === by && p.t === 'R') return true; break; }
+        nf += dx[d]; nr += dy[d];
+      }
+    }
+  }
+
+  // Sıçrayıcılar — geometri tablosu
+  const leapers = [
+    ['T', [[2, 0], [-2, 0], [0, 2], [0, -2]]],          // Talia
+    ['W', [[2, 0], [-2, 0], [0, 2], [0, -2]]],          // Savaş (Talia ile aynı şekil)
+    ['N', [[2, 1], [2, -1], [-2, 1], [-2, -1], [1, 2], [1, -2], [-1, 2], [-1, -2]]],
+    ['C', [[3, 1], [3, -1], [-3, 1], [-3, -1], [1, 3], [1, -3], [-1, 3], [-1, -3]]],
+    ['E', [[2, 2], [2, -2], [-2, 2], [-2, -2]]],          // Fil
+    ['F', [[1, 1], [1, -1], [-1, 1], [-1, -1]]],          // Ferz
+    ['V', [[1, 0], [-1, 0], [0, 1], [0, -1]]],            // Vali
+  ];
+  for (const [t, offs] of leapers)
+    for (const [dx, dy] of offs)
+      if (isType(board, f + dx, r + dy, by, t)) return true;
+
+  // Piyon (çapraz ileri yeme — saldıran kare ters yönde) (apex:3286)
+  const ar = (by === 'w') ? r - 1 : r + 1;
+  if (isType(board, f - 1, ar, by, 'P') || isType(board, f + 1, ar, by, 'P')) return true;
+
+  // Zürafa
+  for (let s = 0; s < NORMAL; s++) {
+    const p = board[s];
+    if (p && p.c === by && p.t === 'Z' && zurafaAttacks(board, s, f, r)) return true;
+  }
+  return false;
+}
+
+function inCheck(pos, color) {
+  const ksq = findKing(pos.board, color);
+  if (ksq < 0 || ksq >= NORMAL) return false; // şah yoksa/citadel'deyse tehdit yok
+  return isAttacked(pos.board, ksq, other(color));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Hamle üretimi — apex_timur.cpp MoveGenerator
+// ─────────────────────────────────────────────────────────────────────────────
+const M = (from, to, type = 'normal', promo = null) => ({ from, to, type, promo });
+
+function slide(board, from, c, dx, dy, out) {
+  let f = fileOf(from) + dx, r = rankOf(from) + dy;
+  while (inB(f, r)) {
+    const to = mk(f, r), p = board[to];
+    if (!p) out.push(M(from, to));
+    else { if (p.c !== c) out.push(M(from, to)); break; }
+    f += dx; r += dy;
+  }
+}
+function jump(board, from, c, dx, dy, out) {
+  const f = fileOf(from) + dx, r = rankOf(from) + dy;
+  if (!inB(f, r)) return;
+  const to = mk(f, r), p = board[to];
+  if (!p || p.c !== c) out.push(M(from, to));
+}
+function zurafaRay(board, from, c, df, dr, out) {
+  const f0 = fileOf(from), r0 = rankOf(from);
+  const cf = f0 + df, cr = r0 + dr;
+  if (!inB(cf, cr) || board[mk(cf, cr)] != null) return; // çapraz kare boş olmalı
+  const sdx = [1, -1, 0, 0], sdy = [0, 0, 1, -1];
+  for (let s = 0; s < 4; s++) {
+    for (let step = 1; ; step++) {
+      const tf = cf + sdx[s] * step, tr = cr + sdy[s] * step;
+      if (!inB(tf, tr)) break;
+      const to = mk(tf, tr), p = board[to];
+      if (step < 3) { if (p) break; continue; } // ara kare dolu → engel
+      if (!p) out.push(M(from, to));
+      else { if (p.c !== c) out.push(M(from, to)); break; }
+    }
+  }
+}
+
+function genPawn(board, from, c, out, promoAll) {
+  const f = fileOf(from), r = rankOf(from);
+  const dr = (c === 'w') ? 1 : -1;
+  const promoRank = (c === 'w') ? RANKS - 1 : 0;
+  const pushTo = (to, rankReached) => {
+    if (rankReached === promoRank) {
+      if (promoAll) for (const pt of PROMO_OPTIONS) out.push(M(from, to, 'promo', pt));
+      else out.push(M(from, to, 'promo', 'R')); // AI: en değerli taşa (Kale)
+    } else out.push(M(from, to));
+  };
+  // ileri 1 (çift adım yok)
+  const nr = r + dr;
+  if (inB(f, nr) && !board[mk(f, nr)]) pushTo(mk(f, nr), nr);
+  // çapraz yeme
+  for (const dcf of [-1, 1]) {
+    const cf = f + dcf, cr = r + dr;
+    if (!inB(cf, cr)) continue;
+    const p = board[mk(cf, cr)];
+    if (p && p.c !== c) pushTo(mk(cf, cr), cr);
+  }
+}
+
+function genKing(board, from, c, out) {
+  for (let dx = -1; dx <= 1; dx++)
+    for (let dy = -1; dy <= 1; dy++)
+      if (dx || dy) jump(board, from, c, dx, dy, out);
+  // Citadel girişi (apex:3619): beyaz a9'dan siyah citadel'e, siyah k2'den beyaz citadel'e
+  if (c === 'w' && from === BLACK_CITADEL_NEIGHBOR) out.push(M(from, BLACK_CITADEL, 'citadel'));
+  if (c === 'b' && from === WHITE_CITADEL_NEIGHBOR) out.push(M(from, WHITE_CITADEL, 'citadel'));
+}
+
+// Bir taşın pseudo-legal hamleleri
+function genPiece(board, from, c, t, out, promoAll) {
+  switch (t) {
+    case 'K': genKing(board, from, c, out); break;
+    case 'R': slide(board, from, c, 1, 0, out); slide(board, from, c, -1, 0, out);
+              slide(board, from, c, 0, 1, out); slide(board, from, c, 0, -1, out); break;
+    case 'Z': zurafaRay(board, from, c, 1, 1, out); zurafaRay(board, from, c, 1, -1, out);
+              zurafaRay(board, from, c, -1, 1, out); zurafaRay(board, from, c, -1, -1, out); break;
+    case 'T': jump(board, from, c, 2, 0, out); jump(board, from, c, -2, 0, out);
+              jump(board, from, c, 0, 2, out); jump(board, from, c, 0, -2, out); break;
+    case 'N': for (const [dx, dy] of [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]])
+                jump(board, from, c, dx, dy, out); break;
+    case 'C': for (const [dx, dy] of [[3,1],[3,-1],[-3,1],[-3,-1],[1,3],[1,-3],[-1,3],[-1,-3]])
+                jump(board, from, c, dx, dy, out); break;
+    case 'E': for (const [dx, dy] of [[2,2],[2,-2],[-2,2],[-2,-2]]) jump(board, from, c, dx, dy, out); break;
+    case 'W': jump(board, from, c, 2, 0, out); jump(board, from, c, -2, 0, out);
+              jump(board, from, c, 0, 2, out); jump(board, from, c, 0, -2, out); break;
+    case 'F': for (const [dx, dy] of [[1,1],[1,-1],[-1,1],[-1,-1]]) jump(board, from, c, dx, dy, out); break;
+    case 'V': jump(board, from, c, 1, 0, out); jump(board, from, c, -1, 0, out);
+              jump(board, from, c, 0, 1, out); jump(board, from, c, 0, -1, out); break;
+    case 'P': genPawn(board, from, c, out, promoAll); break;
+  }
+}
+
+// Swap: şah ile kendi taşlarından biri yer değiştirir (1 hak, şah altında yasak — apex:3799)
+function genSwap(pos, out) {
+  const c = pos.stm;
+  if (pos.swapUsed[c]) return;
+  if (inCheck(pos, c)) return;
+  const ksq = findKing(pos.board, c);
+  if (ksq < 0) return;
+  for (let s = 0; s < NORMAL; s++) {
+    if (s === ksq) continue;
+    const p = pos.board[s];
+    if (p && p.c === c) out.push(M(ksq, s, 'swap'));
+  }
+}
+
+function genPseudo(pos, { includeSwap = true, promoAll = true } = {}) {
+  const out = [];
+  const c = pos.stm;
+  for (let s = 0; s < NORMAL; s++) {
+    const p = pos.board[s];
+    if (p && p.c === c) genPiece(pos.board, s, c, p.t, out, promoAll);
+  }
+  if (includeSwap) genSwap(pos, out);
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Hamle uygula (immutable) — yeni pozisyon döndürür
+// ─────────────────────────────────────────────────────────────────────────────
+function applyMove(pos, m) {
+  const np = clonePosition(pos);
+  const c = pos.stm;
+  const b = np.board;
+  if (m.type === 'swap') {
+    const tmp = b[m.from]; b[m.from] = b[m.to]; b[m.to] = tmp;
+    np.swapUsed[c] = true;
+  } else if (m.type === 'citadel') {
+    b[m.to] = b[m.from]; b[m.from] = null;
+    np.drawn = true; // şah rakip citadel'e girdi → beraberlik
+  } else if (m.type === 'promo') {
+    b[m.to] = { t: m.promo, c }; b[m.from] = null;
+  } else {
+    b[m.to] = b[m.from]; b[m.from] = null;
+  }
+  np.stm = other(c);
+  return np;
+}
+
+// Yasal hamleler: pseudo üret, uygula, kendi şahı tehdit altında değilse koru
+function legalMoves(pos, opts = {}) {
+  const c = pos.stm;
+  const out = [];
+  for (const m of genPseudo(pos, opts)) {
+    const np = applyMove(pos, m);
+    if (!inCheck(np, c)) out.push(m); // np.stm karşıya geçti; biz c'nin şahına bakarız
+  }
+  return out;
+}
+
+// Belirli bir kareden çıkan yasal hamleler (UI seçim için)
+function legalFrom(pos, from, opts = {}) {
+  return legalMoves(pos, opts).filter((m) => m.from === from);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Oyun durumu
+//  'ongoing' | 'checkmate' (kazanan stm'in rakibi) | 'stalemate' | 'draw'
+// ─────────────────────────────────────────────────────────────────────────────
+function status(pos) {
+  if (pos.drawn) return { over: true, result: 'draw', reason: 'citadel' };
+  const moves = legalMoves(pos, { includeSwap: true, promoAll: false });
+  if (moves.length === 0) {
+    if (inCheck(pos, pos.stm))
+      return { over: true, result: 'checkmate', winner: other(pos.stm), reason: 'mat' };
+    return { over: true, result: 'stalemate', reason: 'pat' };
+  }
+  return { over: false, result: 'ongoing', check: inCheck(pos, pos.stm) };
+}
+
+function isCapture(pos, m) {
+  return m.type !== 'swap' && m.type !== 'citadel' && pos.board[m.to] != null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Timurlenk Satrancı — bilgisayar rakip (saf JS, DOM'dan bağımsız)
+//  apex_timur.cpp'nin "NNUE kapalı" değerlendirmesini taban alır:
+//    • Materyal farkı (evaluate_fast → b.material(WHITE) - b.material(BLACK))
+//    • Negamax + alfa-beta budama, MVV-LVA hamle sıralaması
+//    • Sessizlik (quiescence) araması: yatay yanılgıyı azaltmak için yemeler
+//    • Yinelemeli derinleşme (iterative deepening) + zaman sınırı (mobil için akıcı)
+//  Swap hamleleri AI'da üretilmez (materyal değişmez → değersiz, dallanmayı şişirir;
+//  ayrıca şah altında zaten yasak, kaçış sağlamaz). Citadel = beraberlik (skor 0).
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MATE = 900000;       // apex SCORE_MATE
+const INF = 1000000;
+
+// Materyal değerlendirme — sıradaki tarafın perspektifinden (centipawn)
+function evaluate(pos) {
+  let s = 0;
+  for (const p of pos.board) {
+    if (!p) continue;
+    s += (p.c === 'w') ? PIECE_VALUE[p.t] : -PIECE_VALUE[p.t];
+  }
+  return (pos.stm === 'w') ? s : -s;
+}
+
+// MVV-LVA: değerli kurbanı ucuz saldırganla almak öncelikli (apex score_moves)
+function moveScore(pos, m) {
+  let s = 0;
+  if (isCapture(pos, m)) {
+    const victim = pos.board[m.to], attacker = pos.board[m.from];
+    s += 10 * PIECE_VALUE[victim.t] - PIECE_VALUE[attacker.t];
+  }
+  if (m.type === 'promo') s += 800;
+  return s;
+}
+function order(pos, moves) {
+  for (const m of moves) m._s = moveScore(pos, m);
+  moves.sort((a, b) => b._s - a._s);
+  return moves;
+}
+
+const AI_OPTS = { includeSwap: false, promoAll: false };
+
+// Sessizlik araması: yalnız yemeler/terfiler — durağan pozisyona inene dek
+function quiesce(pos, alpha, beta, deadline) {
+  const standPat = evaluate(pos);
+  if (standPat >= beta) return beta;
+  if (standPat > alpha) alpha = standPat;
+  if (Date.now() > deadline) return alpha;
+
+  const caps = order(pos, legalMoves(pos, AI_OPTS).filter(
+    (m) => isCapture(pos, m) || m.type === 'promo'));
+  for (const m of caps) {
+    const sc = -quiesce(applyMove(pos, m), -beta, -alpha, deadline);
+    if (sc >= beta) return beta;
+    if (sc > alpha) alpha = sc;
+  }
+  return alpha;
+}
+
+// Negamax + alfa-beta. ply = kökten uzaklık (mat skorunu yakına çekmek için)
+function negamax(pos, depth, alpha, beta, ply, deadline, info) {
+  if (pos.drawn) return 0;                       // citadel beraberliği
+  if (Date.now() > deadline) { info.timeout = true; return evaluate(pos); }
+  if (depth <= 0) return quiesce(pos, alpha, beta, deadline);
+
+  const moves = legalMoves(pos, AI_OPTS);
+  if (moves.length === 0)
+    return inCheck(pos, pos.stm) ? -MATE + ply : 0; // mat (uzaklıkça) / pat=0
+
+  order(pos, moves);
+  let best = -INF;
+  for (const m of moves) {
+    const sc = -negamax(applyMove(pos, m), depth - 1, -beta, -alpha, ply + 1, deadline, info);
+    if (sc > best) best = sc;
+    if (best > alpha) alpha = best;
+    if (alpha >= beta) break;                    // beta kesme
+    if (info.timeout) break;
+  }
+  return best;
+}
+
+// Kök: yinelemeli derinleşme + zaman sınırı. En iyi hamleyi döndürür.
+function chooseMove(pos, { maxDepth = 4, timeMs = 800 } = {}) {
+  const root = legalMoves(pos, AI_OPTS);
+  if (root.length === 0) return null;
+  if (root.length === 1) return root[0];
+
+  const deadline = Date.now() + timeMs;
+  let best = root[0], bestScore = -INF;
+
+  for (let d = 1; d <= maxDepth; d++) {
+    const info = { timeout: false };
+    let localBest = null, localScore = -INF, alpha = -INF;
+    // Önceki en iyi hamleyi başa al (PV) → daha iyi budama
+    const ordered = order(pos, root.slice());
+    const bi = ordered.indexOf(best);
+    if (bi > 0) { ordered.splice(bi, 1); ordered.unshift(best); }
+
+    for (const m of ordered) {
+      const sc = -negamax(applyMove(pos, m), d - 1, -INF, -alpha, 1, deadline, info);
+      if (sc > localScore) { localScore = sc; localBest = m; }
+      if (localScore > alpha) alpha = localScore;
+      if (info.timeout) break;
+    }
+    if (localBest && !info.timeout) { best = localBest; bestScore = localScore; }
+    if (info.timeout || Date.now() > deadline) break;
+    if (bestScore >= MATE - 1000) break;          // mat bulundu, derinleşme gereksiz
+  }
+  // sıralama için eklenen geçici alanı temizle
+  delete best._s;
+  return best;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  Timurlenk Satrancı — UI katmanı (render + sıra tabanlı oyun + bilgisayar rakip)
+//  Bağımlılıklar (aynı script kapsamında, build sırasıyla):
+//    board.mjs  → FILES, RANKS, NORMAL, mk, fileOf, rankOf, WHITE_CITADEL, BLACK_CITADEL
+//    engine.mjs → makePosition, applyMove, legalMoves, legalFrom, status, inCheck,
+//                 findKing, isCapture, PROMO_OPTIONS
+//    ai.mjs     → chooseMove
+//    (gömme)    → PIECE_IMG  { harf: {w,b} }
+//  Kurallar artık tam: yasal hamle zorunlu, sıra dönüşümlü, şah/mat/pat/terfi/
+//  citadel/swap. İnsan bir renk, bilgisayar diğer renk.
 // ─────────────────────────────────────────────────────────────────────────────
 
 let gBoard = null;
 const cellMap = {};                 // sq -> hücre elemanı
-const state = { board: null, selected: null };
+const state = {
+  pos: null,            // motor pozisyonu
+  humanColor: 'w',      // insanın rengi
+  selected: null,       // seçili kare (sq) | null
+  legal: [],            // seçili kareden yasal hamleler
+  thinking: false,      // bilgisayar düşünüyor
+  over: false,          // oyun bitti
+  swapArmed: false,     // "yer değiştir" modu açık
+  lastMove: null,       // {from,to} — son hamle vurgusu
+  pendingPromo: null,   // {from,to} — terfi seçimi bekleniyor
+};
 let drag = null;
 
-const letterOf = (f) => String.fromCharCode(97 + f); // 0..10 -> a..k
+const letterOf = (f) => String.fromCharCode(97 + f);
+const TR = { K:'Şah', R:'Kale', Z:'Zürafa', T:'Talia', N:'At', C:'Deve',
+             E:'Fil', W:'Savaş Mak.', F:'Ferz', V:'Vali', P:'Piyon' };
+const AI = { maxDepth: 4, timeMs: 800 };
 
+const $ = (id) => document.getElementById(id);
+const aiColor = () => (state.humanColor === 'w' ? 'b' : 'w');
+const humanTurn = () => state.pos && state.pos.stm === state.humanColor && !state.over && !state.thinking;
+
+// ── Tahta kurulumu (112 hücre + etiketler + 2 citadel) ──────────────────────
 function buildBoard() {
-  gBoard = document.getElementById('gBoard');
+  gBoard = $('gBoard');
   gBoard.innerHTML = '';
   for (const k in cellMap) delete cellMap[k];
 
-  // Rütbe etiketleri (sol sütun 1, 1–10) — ekran satırı = 10 - rank
   for (let r = 0; r < RANKS; r++) {
     const lab = document.createElement('div');
     lab.className = 'g-lab';
@@ -471,7 +1001,6 @@ function buildBoard() {
     lab.textContent = String(r + 1);
     gBoard.appendChild(lab);
   }
-  // Dosya etiketleri (alt satır 11, a–k)
   for (let f = 0; f < FILES; f++) {
     const lab = document.createElement('div');
     lab.className = 'g-lab';
@@ -480,7 +1009,6 @@ function buildBoard() {
     lab.textContent = letterOf(f);
     gBoard.appendChild(lab);
   }
-  // 110 normal kare (dosya f -> sütun f+3 ; rütbe r -> satır 10-r)
   for (let r = 0; r < RANKS; r++) {
     for (let f = 0; f < FILES; f++) {
       const sq = mk(f, r);
@@ -493,7 +1021,6 @@ function buildBoard() {
       cellMap[sq] = cell;
     }
   }
-  // Citadel kareleri: beyaz = k2 sağı (sütun 14, rank1=satır9), siyah = a9 solu (sütun 2, rank8=satır2)
   const wc = document.createElement('div');
   wc.className = 'g-cell g-citadel';
   wc.dataset.sq = String(WHITE_CITADEL);
@@ -514,11 +1041,28 @@ function buildBoard() {
   gBoard.addEventListener('pointercancel', onUp);
 }
 
+// ── Render: taşlar + vurgular + durum satırı ────────────────────────────────
 function render() {
+  const b = state.pos.board;
+  const targetSet = {};      // sq -> 'move' | 'cap'
+  for (const m of state.legal) targetSet[m.to] = isCapture(state.pos, m) ? 'cap' : 'move';
+
+  const swapCands = {};
+  if (state.swapArmed) {
+    const ksq = findKing(b, state.humanColor);
+    for (let s = 0; s < NORMAL; s++) {
+      const p = b[s];
+      if (p && p.c === state.humanColor && s !== ksq) swapCands[s] = true;
+    }
+  }
+
+  let chkSq = -1;
+  if (!state.over && inCheck(state.pos, state.pos.stm)) chkSq = findKing(b, state.pos.stm);
+
   for (const sqKey in cellMap) {
     const sq = +sqKey;
     const cell = cellMap[sq];
-    const p = state.board[sq];
+    const p = b[sq];
     let img = cell.querySelector('img.pc');
     if (p) {
       if (!img) {
@@ -534,36 +1078,152 @@ function render() {
       img.remove();
     }
     cell.classList.toggle('sel', state.selected === sq);
+    cell.classList.toggle('tgt', targetSet[sq] === 'move');
+    cell.classList.toggle('cap', targetSet[sq] === 'cap');
+    cell.classList.toggle('swapcand', !!swapCands[sq]);
+    cell.classList.toggle('chk', sq === chkSq);
+    cell.classList.toggle('last', !!state.lastMove &&
+      (sq === state.lastMove.from || sq === state.lastMove.to));
   }
+  renderStatus();
+  syncControls();
 }
 
+function renderStatus() {
+  const el = $('gStatus');
+  if (!el) return;
+  let msg;
+  if (state.over) {
+    const st = status(state.pos);
+    if (st.result === 'checkmate')
+      msg = (st.winner === state.humanColor ? '🏆 Mat! Kazandın.' : 'Mat — bilgisayar kazandı.');
+    else if (st.result === 'stalemate') msg = 'Pat — berabere.';
+    else if (st.result === 'draw') msg = 'Beraberlik (citadel).';
+    else msg = 'Oyun bitti.';
+  } else if (state.thinking) {
+    msg = 'Bilgisayar düşünüyor…';
+  } else if (state.swapArmed) {
+    msg = 'Yer değiştir: şahla takas edeceğin taşı seç.';
+  } else {
+    const turn = state.pos.stm === state.humanColor ? 'Sıra sende' : 'Sıra bilgisayarda';
+    const chk = inCheck(state.pos, state.pos.stm) ? ' — ŞAH!' : '';
+    msg = turn + chk;
+  }
+  el.textContent = msg;
+}
+
+// Kontrolleri (swap düğmesi, renk seçimi) durumla eşitle
+function syncControls() {
+  const sw = $('gSwap');
+  if (sw) {
+    const can = humanTurn() && !state.pos.swapUsed[state.humanColor]
+      && !inCheck(state.pos, state.humanColor);
+    sw.disabled = !can;
+    sw.classList.toggle('armed', state.swapArmed);
+    sw.textContent = state.pos.swapUsed[state.humanColor] ? 'Yer Değiştir (kullanıldı)' : 'Yer Değiştir';
+  }
+  const sel = $('gSide');
+  if (sel) sel.value = state.humanColor;
+}
+
+// ── Etkileşim ────────────────────────────────────────────────────────────────
 function cellSqFromPoint(x, y) {
   const el = document.elementFromPoint(x, y);
   const cell = el && el.closest('.g-cell');
   return cell ? +cell.dataset.sq : null;
 }
 
-function movePiece(from, to) {
-  if (from === to || from == null || to == null) return;
-  if (!state.board[from]) return;
-  state.board[to] = state.board[from];
-  state.board[from] = null;
+function selectSquare(sq) {
+  state.selected = sq;
+  state.legal = legalFrom(state.pos, sq, { includeSwap: false, promoAll: true });
+}
+function clearSelection() { state.selected = null; state.legal = []; }
+
+// from→to için yasal hamle(ler); terfi ise seçim açar, değilse uygular
+function tryMoveTo(toSq) {
+  const matches = state.legal.filter((m) => m.to === toSq);
+  if (matches.length === 0) { clearSelection(); render(); return false; }
+  if (matches[0].type === 'promo') { openPromo(state.selected, toSq); return true; }
+  doMove(matches[0]);
+  return true;
+}
+
+function doMove(move) {
+  state.pos = applyMove(state.pos, move);
+  state.lastMove = { from: move.from, to: move.to };
+  clearSelection();
+  state.swapArmed = false;
+  state.pendingPromo = null;
+  checkEnd();
+  render();
+  if (!state.over && state.pos.stm === aiColor()) scheduleAI();
+}
+
+function checkEnd() {
+  const st = status(state.pos);
+  state.over = st.over;
+  if (st.over) showOver();
+  return st.over;
+}
+
+function scheduleAI() {
+  state.thinking = true;
+  renderStatus();
+  // UI'nin "düşünüyor" durumunu çizebilmesi için bir tık geciktir
+  setTimeout(() => {
+    // Normalde swap'sız arar; tek yasal hamle swap ise ona düş (kilitlenmeyi önle)
+    let m = chooseMove(state.pos, AI);
+    if (!m) { const all = legalMoves(state.pos, { includeSwap: true }); m = all[0] || null; }
+    state.thinking = false;
+    if (!m) { checkEnd(); render(); return; }
+    state.pos = applyMove(state.pos, m);
+    state.lastMove = { from: m.from, to: m.to };
+    checkEnd();
+    render();
+  }, 40);
 }
 
 function onDown(e) {
+  if (!humanTurn()) return;
   const cell = e.target.closest('.g-cell');
   if (!cell) return;
   e.preventDefault();
   const sq = +cell.dataset.sq;
+  const p = state.pos.board[sq];
+
+  // Swap modu: kendi (şah olmayan) taşına dokun → takas
+  if (state.swapArmed) {
+    if (p && p.c === state.humanColor && p.t !== 'K') {
+      const ksq = findKing(state.pos.board, state.humanColor);
+      const sw = legalMoves(state.pos, { includeSwap: true })
+        .find((m) => m.type === 'swap' && m.from === ksq && m.to === sq);
+      if (sw) { doMove(sw); return; }
+    }
+    state.swapArmed = false; render(); return;
+  }
+
   try { gBoard.setPointerCapture(e.pointerId); } catch (_) {}
-  drag = { fromSq: sq, hasPiece: !!state.board[sq], moved: false, x: e.clientX, y: e.clientY, ghost: null };
+
+  // Seçiliyken yasal hedefe dokunma → taşı (tap-to-move)
+  if (state.selected != null && state.selected !== sq) {
+    if (state.legal.some((m) => m.to === sq)) { tryMoveTo(sq); return; }
+  }
+  // Kendi taşını seç
+  if (p && p.c === state.humanColor) {
+    selectSquare(sq);
+    drag = { fromSq: sq, moved: false, x: e.clientX, y: e.clientY, ghost: null };
+    render();
+  } else {
+    clearSelection(); render();
+  }
 }
 
 function onMove(e) {
-  if (!drag || !drag.hasPiece) return;
+  if (!drag) return;
   if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) {
     drag.moved = true;
-    const p = state.board[drag.fromSq];
+    const p = state.pos.board[drag.fromSq];
+    if (!p) return;
     const ghost = document.createElement('img');
     ghost.className = 'pc-ghost';
     ghost.src = (PIECE_IMG[p.t] || {})[p.c] || '';
@@ -589,44 +1249,95 @@ function onUp(e) {
   const fromCell = cellMap[d.fromSq];
   const oi = fromCell && fromCell.querySelector('img.pc');
   if (oi) oi.style.visibility = '';
-
-  if (d.moved && d.hasPiece) {
-    // sürükle-bırak
+  if (d.moved) {
     const toSq = cellSqFromPoint(e.clientX, e.clientY);
-    if (toSq != null) movePiece(d.fromSq, toSq);
-    state.selected = null;
-  } else {
-    // dokunma (tap): tıkla-seç / tıkla-taşı
-    if (d.hasPiece) {
-      if (state.selected == null) state.selected = d.fromSq;
-      else if (state.selected === d.fromSq) state.selected = null;
-      else { movePiece(state.selected, d.fromSq); state.selected = null; }
-    } else if (state.selected != null) {
-      movePiece(state.selected, d.fromSq);
-      state.selected = null;
-    }
+    if (toSq != null && state.selected === d.fromSq) tryMoveTo(toSq);
+    else render();
   }
+  // tap (moved=false): seçim onDown'da yapıldı; ek iş yok
+}
+
+// ── Terfi seçimi ─────────────────────────────────────────────────────────────
+function openPromo(from, to) {
+  state.pendingPromo = { from, to };
+  const row = $('gPromoRow');
+  const overlay = $('gPromo');
+  if (!row || !overlay) { // DOM yoksa (test) varsayılan Kale
+    doMove({ from, to, type: 'promo', promo: 'R' }); return;
+  }
+  row.innerHTML = '';
+  for (const pt of PROMO_OPTIONS) {
+    const btn = document.createElement('button');
+    btn.className = 'g-promo-item';
+    btn.title = TR[pt];
+    const img = document.createElement('img');
+    img.src = (PIECE_IMG[pt] || {})[state.humanColor] || '';
+    img.alt = pt; img.draggable = false;
+    btn.appendChild(img);
+    btn.addEventListener('click', () => choosePromo(pt));
+    row.appendChild(btn);
+  }
+  overlay.classList.add('vis');
+}
+function choosePromo(pt) {
+  const overlay = $('gPromo');
+  if (overlay) overlay.classList.remove('vis');
+  const pp = state.pendingPromo;
+  if (!pp) return;
+  doMove({ from: pp.from, to: pp.to, type: 'promo', promo: pt });
+}
+
+// ── Oyun sonu afişi ──────────────────────────────────────────────────────────
+function showOver() {
+  const overlay = $('gOver'); const msg = $('gOverMsg');
+  if (!overlay || !msg) return;
+  const st = status(state.pos);
+  if (st.result === 'checkmate')
+    msg.textContent = st.winner === state.humanColor ? 'Mat! Kazandın 🏆' : 'Mat — bilgisayar kazandı.';
+  else if (st.result === 'stalemate') msg.textContent = 'Pat — berabere.';
+  else if (st.result === 'draw') msg.textContent = 'Beraberlik (citadel).';
+  else msg.textContent = 'Oyun bitti.';
+  overlay.classList.add('vis');
+}
+
+// ── Kontrol fonksiyonları (HTML onclick) ────────────────────────────────────
+function toggleSwap() {
+  if (!humanTurn()) return;
+  if (state.pos.swapUsed[state.humanColor] || inCheck(state.pos, state.humanColor)) return;
+  state.swapArmed = !state.swapArmed;
+  clearSelection();
   render();
+}
+
+function setSide(color) {
+  if (color !== 'w' && color !== 'b') return;
+  state.humanColor = color;
+  newGame();
 }
 
 function newGame() {
-  state.board = setupBoard();
-  state.selected = null;
+  state.pos = makePosition();
+  state.selected = null; state.legal = [];
+  state.thinking = false; state.over = false;
+  state.swapArmed = false; state.lastMove = null; state.pendingPromo = null;
+  const ov = $('gOver'); if (ov) ov.classList.remove('vis');
+  const pr = $('gPromo'); if (pr) pr.classList.remove('vis');
   if (!gBoard) buildBoard();
   render();
+  if (state.pos.stm === aiColor()) scheduleAI(); // insan siyahsa bilgisayar (beyaz) başlar
 }
 
 function startGame() {
-  const menu = document.getElementById('menu');
-  const game = document.getElementById('game');
+  const menu = $('menu');
+  const game = $('game');
   if (menu) menu.classList.remove('vis');
   if (game) game.classList.add('vis');
   newGame();
 }
 
 function exitGame() {
-  const menu = document.getElementById('menu');
-  const game = document.getElementById('game');
+  const menu = $('menu');
+  const game = $('game');
   if (game) game.classList.remove('vis');
   if (menu) menu.classList.add('vis');
 }
@@ -635,7 +1346,10 @@ function exitGame() {
 window.startGame = startGame;
 window.exitGame = exitGame;
 window.newGame = newGame;
-window.__tc = { state, setupBoard, serialize }; // tarayıcı konsolundan teşhis
+window.setSide = setSide;
+window.toggleSwap = toggleSwap;
+window.choosePromo = choosePromo;
+window.__tc = { state, makePosition, applyMove, legalMoves, status }; // konsol teşhis
 
 function tcInit() {
   const playBtn = document.querySelector('.pl-btn');

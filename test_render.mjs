@@ -45,11 +45,18 @@ const document = {
 };
 const window = {};
 
-const board = readFileSync('game_src/board.mjs', 'utf8').replace(/\bexport\s+/g, '');
-const ui = readFileSync('game_src/ui.js', 'utf8');
-const ctx = vm.createContext({ document, window, console, Math, String, Number, Object, Array });
+const stripModule = (src) => src
+  .replace(/^\s*import\s+[\s\S]*?from\s*['"][^'"]+['"];?\s*$/gm, '')
+  .replace(/\bexport\s+/g, '');
+const board  = stripModule(readFileSync('game_src/board.mjs', 'utf8'));
+const engine = stripModule(readFileSync('game_src/engine.mjs', 'utf8'));
+const ai     = stripModule(readFileSync('game_src/ai.mjs', 'utf8'));
+const ui     = readFileSync('game_src/ui.js', 'utf8');
+const ctx = vm.createContext({
+  document, window, console, Math, String, Number, Object, Array, Date, setTimeout,
+});
 ctx.PIECE_IMG = PIECE_IMG;
-vm.runInContext(board + '\n' + ui, ctx);
+vm.runInContext([board, engine, ai, ui].join('\n'), ctx);
 
 // Tahtayı kur + çiz
 window.newGame();

@@ -53,7 +53,17 @@
 }
 .g-cell.light{ background:rgba(232,213,160,.42); }
 .g-cell.dark { background:rgba(122,85,38,.52); }
+.g-cell.last{ background:rgba(201,168,76,.30); }
 .g-cell.sel{ box-shadow:0 0 0 3px var(--gold) inset; }
+/* Yasal hamle hedefleri */
+.g-cell.tgt::before{
+  content:""; position:absolute; width:32%; height:32%; border-radius:50%;
+  background:rgba(201,168,76,.80); box-shadow:0 0 7px rgba(201,168,76,.6);
+  pointer-events:none; z-index:2;
+}
+.g-cell.cap{ box-shadow:0 0 0 3px rgba(201,168,76,.9) inset; }
+.g-cell.chk{ box-shadow:0 0 0 3px #e06a4a inset, 0 0 14px rgba(224,106,74,.75) inset; }
+.g-cell.swapcand{ outline:2px dashed rgba(201,168,76,.85); outline-offset:-3px; cursor:pointer; }
 
 .g-citadel{
   background:repeating-linear-gradient(45deg,#34250f,#34250f 6px,#46330f 6px,#46330f 12px);
@@ -82,3 +92,65 @@
   width:48px; height:48px;
   filter:drop-shadow(0 5px 7px rgba(0,0,0,.6));
 }
+
+/* ── Durum çubuğu + kontroller ── */
+.g-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:6px 12px; border-bottom:1px solid rgba(201,168,76,.25);
+  background:rgba(0,0,0,.22); flex-wrap:wrap;
+}
+.g-status{
+  font-family:'Cinzel',serif; color:var(--gold-light);
+  font-size:clamp(11px,3vw,15px); min-height:1.2em;
+}
+.g-actions{ display:flex; align-items:center; gap:8px; }
+.g-side{ color:var(--text); font-size:clamp(10px,2.6vw,13px); display:flex; align-items:center; gap:4px; }
+.g-side select{
+  background:var(--dark2); color:var(--text); border:1px solid var(--gold-dark);
+  border-radius:6px; padding:3px 6px; font-size:clamp(10px,2.6vw,13px);
+}
+.g-swap{
+  font-family:'Cinzel',serif; cursor:pointer;
+  background:linear-gradient(135deg,#3a2c12,#26200f); color:var(--gold-light);
+  border:1px solid var(--gold-dark); border-radius:8px;
+  padding:5px 10px; font-size:clamp(10px,2.6vw,13px); white-space:nowrap;
+}
+.g-swap.armed{ background:linear-gradient(135deg,#f0d080,#c9a84c); color:#2a1c0a; }
+.g-swap:disabled{ opacity:.4; cursor:default; }
+
+/* ── Tam ekran kaplama: terfi seçimi + oyun sonu ── */
+.g-over,.g-promo{
+  position:absolute; inset:0; z-index:60;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(6,4,2,.66); backdrop-filter:blur(2px);
+}
+.g-over.vis,.g-promo.vis{ display:flex; }
+.g-over-card,.g-promo-card{
+  background:linear-gradient(160deg,var(--dark3,#1a1208),#0d0905);
+  border:1px solid var(--gold-dark); border-radius:14px;
+  box-shadow:0 0 0 1px rgba(201,168,76,.3) inset, 0 14px 40px rgba(0,0,0,.7);
+  padding:22px 26px; text-align:center; max-width:90vw;
+}
+.g-over-card #gOverMsg{
+  font-family:'Cinzel Decorative',serif; color:var(--gold-light);
+  font-size:clamp(16px,4.4vw,24px); margin-bottom:16px;
+}
+.g-over-card button{
+  font-family:'Cinzel',serif; font-weight:600; cursor:pointer;
+  background:linear-gradient(135deg,#f0d080,#c9a84c); color:#2a1c0a;
+  border:1px solid var(--gold-dark); border-radius:8px; padding:8px 18px;
+  font-size:clamp(12px,3vw,15px);
+}
+.g-promo-t{
+  font-family:'Cinzel',serif; color:var(--gold-light);
+  font-size:clamp(13px,3.4vw,18px); margin-bottom:12px;
+}
+.g-promo-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+.g-promo-item{
+  width:clamp(48px,15vw,72px); height:clamp(48px,15vw,72px);
+  background:rgba(201,168,76,.10); border:1px solid var(--gold-dark);
+  border-radius:10px; cursor:pointer; padding:4px;
+  display:flex; align-items:center; justify-content:center;
+}
+.g-promo-item:hover{ background:rgba(201,168,76,.25); }
+.g-promo-item img{ width:100%; height:100%; object-fit:contain; }
